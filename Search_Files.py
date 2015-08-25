@@ -5,7 +5,7 @@ import platform
 from os import (walk, sep, system)
 from os.path import (join, splitext, exists)
 from PyQt5.QtWidgets import (QApplication, QMessageBox, QFileDialog, QWidget,
-                             QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup, QFrame, 
+                             QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup, QFrame, QListWidget, QListWidgetItem,
                              QHBoxLayout, QVBoxLayout)
 from PyQt5.QtCore import (Qt, QTimer)
 # import threading
@@ -21,38 +21,46 @@ class MainWindow(QWidget):
 
         # 创建窗口部件
         self.__lab_title = QLabel('<font color="green" size="6">搜索辅助工具</font>')
+
         self.__lab_open_tool = QLabel('打开文件方式')
         self.__ln_open_tool = QLineEdit()
         self.__pbn_open_tool = QPushButton('浏览...')
-        self.__ln_file_path = QLineEdit()
-        self.__ln_file_name = QLineEdit()
+        self.__ln_open_tool.setFixedWidth(150)
+        self.__pbn_open_tool.setFixedWidth(50)
+
         self.__rbn_search_file = QRadioButton('检索文件名')
         self.__rbn_search_content = QRadioButton('检索文件内容')
+
         self.__rbn_fuzzy = QRadioButton('模糊搜索')
         self.__rbn_precise = QRadioButton('精确搜索')
         self.__rbn_reg = QRadioButton('正则表达式搜索')
+        self.__rbn_fuzzy.setChecked(True)
+
+        self.__ln_file_name = QLineEdit()
+        self.__ln_file_name.setPlaceholderText('请输入搜索条件或正则表达式......')
         self.__rbn_reg_Iyes = QRadioButton('区分大小写')
         self.__rbn_reg_Ino = QRadioButton('不区分大小写')
+
+        self.__ln_file_path = QLineEdit()
+        self.__ln_file_path.setPlaceholderText('请选择或输入路径......')
         self.__pbn_file_path = QPushButton('浏览......')
         self.__pbn_search = QPushButton('检索')
-        self.__browser = QTextBrowser()
-        self.__lab_title.setAlignment(Qt.AlignCenter)
-        self.__ln_file_path.setPlaceholderText('请选择或输入路径......')
-        self.__ln_file_name.setPlaceholderText('请输入搜索条件或正则表达式......')
-        self.__btn_group_type = QButtonGroup()
-        self.__btn_group_re_I = QButtonGroup()
-        self.__btn_group_type.addButton(self.__rbn_search_file)
-        self.__btn_group_type.addButton(self.__rbn_search_content)
-        self.__btn_group_re_I.addButton(self.__rbn_reg_Iyes)
-        self.__btn_group_re_I.addButton(self.__rbn_reg_Ino)
-        self.__rbn_search_file.setChecked(True)
-        self.__rbn_fuzzy.setChecked(True)
-        self.__rbn_reg_Iyes.setChecked(True)
-        self.__ln_file_name.setFocus()
-        self.__ln_open_tool.setFixedWidth(150)
-        self.__pbn_open_tool.setFixedWidth(50)
         self.__pbn_file_path.setFixedWidth(70)
         self.__pbn_search.setFixedWidth(120)
+
+        self.__browser = QTextBrowser()
+        self.__lab_title.setAlignment(Qt.AlignCenter)
+
+        self.__btn_group_type = QButtonGroup()
+        self.__btn_group_type.addButton(self.__rbn_search_file)
+        self.__btn_group_type.addButton(self.__rbn_search_content)
+        self.__rbn_search_file.setChecked(True)
+
+        self.__btn_group_re_I = QButtonGroup()
+        self.__btn_group_re_I.addButton(self.__rbn_reg_Iyes)
+        self.__btn_group_re_I.addButton(self.__rbn_reg_Ino)
+        self.__rbn_reg_Iyes.setChecked(True)
+
         self.__line_1 = QFrame()
         self.__line_1.setFrameStyle(QFrame.HLine | QFrame.Sunken)
         self.__line_2 = QFrame()
@@ -114,6 +122,8 @@ class MainWindow(QWidget):
         self.__layout_top.addWidget(self.__browser)
         self.__layout_top.setSpacing(8)
         self.setLayout(self.__layout_top)
+
+        self.__ln_file_name.setFocus()
 
         # 关联 信号/槽
         self.__pbn_file_path.clicked.connect(self.choose_path)
