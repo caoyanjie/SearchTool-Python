@@ -1,12 +1,13 @@
 __author__ = 'caoyanjie'
 # _*_ coding: utf-8 _*_
-from os import (walk, sep)
 import re
+import platform
+from os import (walk, sep, system)
 from os.path import (join, splitext, exists)
-from PyQt5.QtWidgets import (QApplication, QMessageBox, QFileDialog,
-                             QWidget, QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup, QFrame, 
+from PyQt5.QtWidgets import (QApplication, QMessageBox, QFileDialog, QWidget,
+                             QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup, QFrame, 
                              QHBoxLayout, QVBoxLayout)
-from PyQt5.QtCore import (Qt)
+from PyQt5.QtCore import (Qt, QTimer)
 # import threading
 
 
@@ -20,6 +21,9 @@ class MainWindow(QWidget):
 
         # 创建窗口部件
         self.__lab_title = QLabel('<font color="green" size="6">搜索辅助工具</font>')
+        self.__lab_open_tool = QLabel('打开文件方式')
+        self.__ln_open_tool = QLineEdit()
+        self.__pbn_open_tool = QPushButton('浏览...')
         self.__ln_file_path = QLineEdit()
         self.__ln_file_name = QLineEdit()
         self.__rbn_search_file = QRadioButton('检索文件名')
@@ -36,15 +40,17 @@ class MainWindow(QWidget):
         self.__ln_file_path.setPlaceholderText('请选择或输入路径......')
         self.__ln_file_name.setPlaceholderText('请输入搜索条件或正则表达式......')
         self.__btn_group_type = QButtonGroup()
-        self.__btn_goup_re_I = QButtonGroup()
+        self.__btn_group_re_I = QButtonGroup()
         self.__btn_group_type.addButton(self.__rbn_search_file)
         self.__btn_group_type.addButton(self.__rbn_search_content)
-        self.__btn_goup_re_I.addButton(self.__rbn_reg_Iyes)
-        self.__btn_goup_re_I.addButton(self.__rbn_reg_Ino)
+        self.__btn_group_re_I.addButton(self.__rbn_reg_Iyes)
+        self.__btn_group_re_I.addButton(self.__rbn_reg_Ino)
         self.__rbn_search_file.setChecked(True)
         self.__rbn_fuzzy.setChecked(True)
         self.__rbn_reg_Iyes.setChecked(True)
         self.__ln_file_name.setFocus()
+        self.__ln_open_tool.setFixedWidth(150)
+        self.__pbn_open_tool.setFixedWidth(50)
         self.__pbn_file_path.setFixedWidth(70)
         self.__pbn_search.setFixedWidth(120)
         self.__line_1 = QFrame()
@@ -55,8 +61,17 @@ class MainWindow(QWidget):
         self.__line_3.setFrameStyle(QFrame.HLine | QFrame.Sunken)
 
         # 布局
+        self.__layout_open_tool = QHBoxLayout()
+        self.__layout_open_tool.addWidget(self.__lab_open_tool)
+        self.__layout_open_tool.addWidget(self.__ln_open_tool)
+        self.__layout_open_tool.addWidget(self.__pbn_open_tool)
+        self.__layout_open_tool.setSpacing(2)
+        
         self.__layout_title = QHBoxLayout()
+        self.__layout_title.addStretch(5)
         self.__layout_title.addWidget(self.__lab_title)
+        self.__layout_title.addStretch(1)
+        self.__layout_title.addLayout(self.__layout_open_tool)
 
         self.__layout_search_type = QHBoxLayout()
         self.__layout_search_type.addStretch()
@@ -100,7 +115,32 @@ class MainWindow(QWidget):
         # 关联 信号/槽
         self.__pbn_file_path.clicked.connect(self.choose_path)
         self.__pbn_search.clicked.connect(self.pbn_search_clicked)
+        self.__pbn_open_tool.clicked.connect(self.choose_open_tool)
 
+#        timer = QTimer(self)
+#        timer.timeout.connect(self.set_open_tool)
+#        timer.start(10000)
+
+    def set_open_tool(self):
+        if platform.architecture() == ('32bit', 'WindowsPE'):
+            possible_dir = ['C:/Program Files/Sublime Text 2', 'C:/Sublime Text 2',
+                            'D:/Program Files/Sublime Text 2', 'D:/Sublime Text 2',
+                            'E:/Program Files/Sublime Text 2', 'E:/Sublime Text 2',
+                            'F:/Program Files/Sublime Text 2', 'F:/Sublime Text 2',
+                            'C:/Program Files/Notepad++', 'C:/notepad++',
+                            'D:/Program Files/Notepad++', 'D:/notepad++',
+                            'E:/Program Files/Notepad++', 'E:/notepad++',
+                            'F:/Program Files/Notepad++', 'F:/notepad++',
+                            'C:\Windows\System32']
+        elif platform.architecture() == ('32bit', 'ELF'):
+            possible_dir = ['/usr/bin']
+        for rootdir in possible_dir:
+            for root, dirs, files in walk(rootdir):
+                for file in files:
+                    if file == 'sublime_text.exe' or file == 'notepad++.exe' or file == 'notepad.exe':
+                        self.__ln_open_tool.setText(join(root, file))
+                        return
+        
     # 搜索文件名
     def search_from_filename(self, filepath, filename, mode='fuzzy_search', I=True):
         if filepath == '' or not exists(filepath):
@@ -191,6 +231,12 @@ class MainWindow(QWidget):
             path = sep.join(path.split('/'))
             self.__ln_file_path.setText(path)
 
+    #
+    def choose_open_tool(self):
+        path = QFileDialog.getOpenFileName()
+        if path != '':
+            self.__ln_open_tool.setText(path[0])
+
     # 单击检索按钮
     def pbn_search_clicked(self):
         file_path = self.__ln_file_path.text()
@@ -230,4 +276,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     main_window = MainWindow()
     main_window.show()
+    main_window.set_open_tool()
     sys.exit(app.exec_())
