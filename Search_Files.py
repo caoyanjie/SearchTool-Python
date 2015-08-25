@@ -4,7 +4,7 @@ from os import (walk, sep)
 import re
 from os.path import (join, splitext, exists)
 from PyQt5.QtWidgets import (QApplication, QMessageBox, QFileDialog,
-                             QWidget, QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup,
+                             QWidget, QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup, QFrame, 
                              QHBoxLayout, QVBoxLayout)
 from PyQt5.QtCore import (Qt)
 # import threading
@@ -19,10 +19,9 @@ class MainWindow(QWidget):
                               'reg': 'reg_search'}
 
         # 创建窗口部件
-        self.__lab_title = QLabel('搜索辅助工具')
+        self.__lab_title = QLabel('<font color="green" size="6">搜索辅助工具</font>')
         self.__ln_file_path = QLineEdit()
         self.__ln_file_name = QLineEdit()
-        self.__ln_reg = QLineEdit()
         self.__rbn_search_file = QRadioButton('检索文件名')
         self.__rbn_search_content = QRadioButton('检索文件内容')
         self.__rbn_fuzzy = QRadioButton('模糊搜索')
@@ -30,13 +29,12 @@ class MainWindow(QWidget):
         self.__rbn_reg = QRadioButton('正则表达式搜索')
         self.__rbn_reg_Iyes = QRadioButton('区分大小写')
         self.__rbn_reg_Ino = QRadioButton('不区分大小写')
-        self.__pbn_file_path = QPushButton('浏览...')
+        self.__pbn_file_path = QPushButton('浏览......')
         self.__pbn_search = QPushButton('检索')
         self.__browser = QTextBrowser()
         self.__lab_title.setAlignment(Qt.AlignCenter)
         self.__ln_file_path.setPlaceholderText('请选择或输入路径......')
-        self.__ln_file_name.setPlaceholderText('请输入搜索条件......')
-        self.__ln_reg.setPlaceholderText('请输入要匹配的正则表达式......')
+        self.__ln_file_name.setPlaceholderText('请输入搜索条件或正则表达式......')
         self.__btn_group_type = QButtonGroup()
         self.__btn_goup_re_I = QButtonGroup()
         self.__btn_group_type.addButton(self.__rbn_search_file)
@@ -47,6 +45,14 @@ class MainWindow(QWidget):
         self.__rbn_fuzzy.setChecked(True)
         self.__rbn_reg_Iyes.setChecked(True)
         self.__ln_file_name.setFocus()
+        self.__pbn_file_path.setFixedWidth(70)
+        self.__pbn_search.setFixedWidth(120)
+        self.__line_1 = QFrame()
+        self.__line_1.setFrameStyle(QFrame.HLine | QFrame.Sunken)
+        self.__line_2 = QFrame()
+        self.__line_2.setFrameStyle(QFrame.HLine | QFrame.Sunken)
+        self.__line_3 = QFrame()
+        self.__line_3.setFrameStyle(QFrame.HLine | QFrame.Sunken)
 
         # 布局
         self.__layout_title = QHBoxLayout()
@@ -59,51 +65,49 @@ class MainWindow(QWidget):
         self.__layout_search_type.addWidget(self.__rbn_search_content)
         self.__layout_search_type.addStretch()
 
-        self.__layout_search_reg = QHBoxLayout()
-        self.__layout_search_reg.addWidget(self.__rbn_reg)
-        self.__layout_search_reg.addWidget(self.__ln_reg)
-        self.__layout_search_reg.addWidget(self.__rbn_reg_Iyes)
-        self.__layout_search_reg.addWidget(self.__rbn_reg_Ino)
-        self.__layout_search_reg.setSpacing(5)
+        self.__layout_search_reg_I = QHBoxLayout()
+        self.__layout_search_reg_I.addWidget(self.__rbn_reg_Iyes)
+        self.__layout_search_reg_I.addWidget(self.__rbn_reg_Ino)
 
         self.__layout_search_mode = QHBoxLayout()
         self.__layout_search_mode.addWidget(self.__rbn_fuzzy)
         self.__layout_search_mode.addWidget(self.__rbn_precise)
-        self.__layout_search_mode.addLayout(self.__layout_search_reg)
-        self.__layout_search_mode.setSpacing(30)
+        self.__layout_search_mode.addWidget(self.__rbn_reg)
 
         self.__layout_path = QHBoxLayout()
         self.__layout_path.addWidget(self.__ln_file_path)
         self.__layout_path.addWidget(self.__pbn_file_path)
+        self.__layout_path.addWidget(self.__pbn_search)
+        self.__layout_path.setSpacing(5)
 
         self.__layout_pattern = QHBoxLayout()
         self.__layout_pattern.addWidget(self.__ln_file_name)
-        self.__layout_pattern.addWidget(self.__pbn_search)
+        self.__layout_pattern.addLayout(self.__layout_search_reg_I)
 
         self.__layout_top = QVBoxLayout()
         self.__layout_top.addLayout(self.__layout_title)
+        self.__layout_top.addWidget(self.__line_1)
         self.__layout_top.addLayout(self.__layout_search_type)
+        self.__layout_top.addWidget(self.__line_2)
         self.__layout_top.addLayout(self.__layout_search_mode)
-        self.__layout_top.addLayout(self.__layout_path)
+        self.__layout_top.addWidget(self.__line_3)
         self.__layout_top.addLayout(self.__layout_pattern)
+        self.__layout_top.addLayout(self.__layout_path)
         self.__layout_top.addWidget(self.__browser)
-        self.__layout_top.setSpacing(20)
+        self.__layout_top.setSpacing(8)
         self.setLayout(self.__layout_top)
 
         # 关联 信号/槽
         self.__pbn_file_path.clicked.connect(self.choose_path)
         self.__pbn_search.clicked.connect(self.pbn_search_clicked)
 
-    # 搜索
-    def search_from_filename(self, filepath, filename, mode='fuzzy_search', reg=r'', I=True):
+    # 搜索文件名
+    def search_from_filename(self, filepath, filename, mode='fuzzy_search', I=True):
         if filepath == '' or not exists(filepath):
             return False
         if mode not in self.__search_mode.values():
             return False
-        if mode == self.__search_mode['reg']:
-            if reg == '':
-                return False
-        elif filename == '':
+        if filename == '':
             return False
 
         if mode == self.__search_mode['fuzzy']:
@@ -117,18 +121,68 @@ class MainWindow(QWidget):
                     if filename == splitext(each_file)[0] or filename == each_file:
                         yield join(root, each_file)
         elif mode == self.__search_mode['reg']:
-            if reg == r'':
-                return False
             if I:
-                pattern = re.compile(reg)
+                pattern = re.compile(r'%s' % filename)
             else:
-                pattern = re.compile(reg, re.I)
+                pattern = re.compile(r'%s' % filename, re.I)
 
             for root, dirs, files in walk(filepath):
                 for each_file in files:
                     if re.search(pattern, each_file):
                         yield join(root, each_file)
         self.__browser.append('搜索完毕！')
+
+    # 搜索文件内容
+    def search_from_content(self, path, content, mode='fuzzy_search', I=True):
+        if path == '' or not exists(path):
+            return False
+        if mode not in self.__search_mode.values():
+            return False
+        if content == '':
+            return False
+        pass_file_count = 0
+        error_number = 0
+        current_file = ''
+        processing_file = ''
+        if mode == self.__search_mode['reg']:
+            if I:
+                pattern = re.compile(r'%s' % content)
+            else:
+                pattern = re.compile(r'%s' % content, re.I)
+            for root, dirs, files in walk(path):
+                for each_file in [file for file in files if file.endswith('.h') or file.endswith('.cpp') or file.endswith('.cs')]:
+                    current_file = join(root, each_file)
+                    pass_file_count += 1
+                    try:
+                        for line_number, line in enumerate(open(current_file)):
+                            if re.search(pattern, line):
+                                if processing_file != current_file:
+                                    yield '\n%s' % (current_file)
+                                    processing_file = current_file
+                                yield 'line %s: %s' % (line_number, line.strip())
+                    except Exception as error:
+                        print("%s\n(%s)\n" % (error, current_file))
+                        pass_file_count -= 1
+                        error_number += 1
+                        continue
+        else:
+            for root, dirs, files in walk(path):
+                for each_file in [file for file in files if file.endswith('.h') or file.endswith('.cpp') or file.endswith('.cs')]:
+                    current_file = join(root, each_file)
+                    pass_file_count += 1
+                    try:
+                        for line_number, line in enumerate(open(current_file)):
+                            if content in line:
+                                if processing_file != current_file:
+                                    yield '\n%s' % (current_file)
+                                    processing_file = current_file
+                                yield 'line %s: %s' % (line_number, line.strip())
+                    except Exception as error:
+                        print("%s\n(%s)\n" % (error, current_file))
+                        pass_file_count -= 1
+                        error_number += 1
+                        continue
+        self.__browser.append('\n搜索完毕！\n处理 %s 个文件\n失败 %s 文件' % (pass_file_count, error_number))
 
     # 单击选择路径按钮
     def choose_path(self):
@@ -144,21 +198,16 @@ class MainWindow(QWidget):
         if file_path == '':
             QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入路径', QMessageBox.Ok, self).exec_()
             return
-        mode = self.__search_mode['fuzzy']
-        reg = r''
-        if self.__rbn_reg.isChecked():
-            mode = self.__search_mode['reg']
-            reg = r'%s' % self.__ln_reg.text()
-            if reg == '':
-                QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入正则表达式', QMessageBox.Ok, self).exec_()
-        else:
-            if file_name == '':
+        if file_name == '':
                 QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入匹配特征', QMessageBox.Ok, self).exec_()
                 return
-            if self.__rbn_fuzzy.isChecked():
-                mode = self.__search_mode['fuzzy']
-            elif self.__rbn_precise.isChecked():
-                mode = self.__search_mode['precise']
+        mode = self.__search_mode['fuzzy']
+        if self.__rbn_reg.isChecked():
+            mode = self.__search_mode['reg']
+        elif self.__rbn_fuzzy.isChecked():
+            mode = self.__search_mode['fuzzy']
+        elif self.__rbn_precise.isChecked():
+            mode = self.__search_mode['precise']
         I = True
         if self.__rbn_reg_Ino.isChecked():
             I = False
@@ -166,9 +215,15 @@ class MainWindow(QWidget):
 #        new_threading.start()
 #        new_threading.join()
         self.__browser.clear()
-        for result in self.search_from_filename(file_path, file_name, mode, reg, I):
-            self.__browser.append(result)
-            self.repaint()
+        if self.__rbn_search_file.isChecked():
+            for result in self.search_from_filename(file_path, file_name, mode, I):
+                self.__browser.append(result)
+                self.repaint()
+        else:
+            for result in self.search_from_content(file_path, file_name, mode, I):
+                self.__browser.append(result)
+                self.repaint()
+        
 
 if __name__ == '__main__':
     import sys
