@@ -86,8 +86,11 @@ class MainWindow(QWidget):
 
         self.__layout_search_mode = QHBoxLayout()
         self.__layout_search_mode.addWidget(self.__rbn_fuzzy)
+        self.__layout_search_mode.addStretch()
         self.__layout_search_mode.addWidget(self.__rbn_precise)
+        self.__layout_search_mode.addStretch()
         self.__layout_search_mode.addWidget(self.__rbn_reg)
+        self.__layout_search_mode.setContentsMargins(60, 0, 60, 0)
 
         self.__layout_path = QHBoxLayout()
         self.__layout_path.addWidget(self.__ln_file_path)
