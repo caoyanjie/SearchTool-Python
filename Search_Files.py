@@ -4,7 +4,7 @@ import platform
 from os import (walk, sep, system)
 from os.path import (join, splitext, exists)
 from PyQt5.QtWidgets import (QApplication, QMessageBox, QFileDialog, QWidget,
-                             QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser,
+                             QLabel, QLineEdit, QRadioButton, QToolButton, QPushButton, QTextBrowser,
 			     QButtonGroup, QFrame, QListWidget, QListWidgetItem, QListWidget, QListWidgetItem, QTabWidget,
                              QHBoxLayout, QVBoxLayout, QGridLayout)
 
@@ -35,9 +35,11 @@ class MainWindow(QWidget):
 
         self.__lab_open_tool = QLabel('打开文件方式')
         self.__ln_open_tool = QLineEdit()
-        self.__pbn_open_tool = QPushButton('浏览...')
+        self.__pbn_open_tool = QToolButton()
+        self.__pbn_open_tool.setText('选择...')
+        self.__ln_open_tool.setFixedHeight(20)
         self.__ln_open_tool.setFixedWidth(150)
-        self.__pbn_open_tool.setFixedWidth(50)
+        self.__pbn_open_tool.setFixedSize(48, 20)
         self.__lab_title_fram.setFixedHeight(50)
 
         # search mode
@@ -60,10 +62,11 @@ class MainWindow(QWidget):
         self.__lab_path_fram = QLabel()
         self.__ln_file_path = QLineEdit()
         self.__ln_file_path.setPlaceholderText('请选择或输入路径......')
-        self.__pbn_file_path = QPushButton('浏览...')
+        self.__pbn_file_path = QToolButton()
+        self.__pbn_file_path.setText('浏览...')
         self.__rbn_search_file = QRadioButton('检索文件名')
         self.__rbn_search_content = QRadioButton('检索文件内容')
-        self.__pbn_file_path.setFixedWidth(50)
+        self.__pbn_file_path.setFixedSize(48, 20)
         self.__lab_path_fram.setFixedHeight(20)
 
         # search state
@@ -73,7 +76,7 @@ class MainWindow(QWidget):
         self.__pbn_stop = QPushButton('停止')
         self.__pbn_search.setFixedWidth(89)
         self.__pbn_stop.setFixedWidth(89)
-        self.__lab_state_fram.setFixedHeight(40)
+        self.__lab_state_fram.setFixedHeight(35)
 
         # search result
         self.__tabView = QTabWidget()
@@ -101,10 +104,15 @@ class MainWindow(QWidget):
 
         # 布局
         # open tool
+        self.__layout_tool_choose = QHBoxLayout()
+        self.__layout_tool_choose.addWidget(self.__ln_open_tool)
+        self.__layout_tool_choose.addWidget(self.__pbn_open_tool)
+        self.__layout_tool_choose.setSpacing(0)
+        self.__layout_tool_choose.setContentsMargins(0, 0, 0, 0)
+        
         self.__layout_open_tool = QHBoxLayout()
         self.__layout_open_tool.addWidget(self.__lab_open_tool)
-        self.__layout_open_tool.addWidget(self.__ln_open_tool)
-        self.__layout_open_tool.addWidget(self.__pbn_open_tool)
+        self.__layout_open_tool.addLayout(self.__layout_tool_choose)
         self.__layout_open_tool.setSpacing(2)
 
         # window title
@@ -155,7 +163,7 @@ class MainWindow(QWidget):
         self.__layout_state.addWidget(self.__lab_state)
         self.__layout_state.addWidget(self.__pbn_search)
         self.__layout_state.addWidget(self.__pbn_stop)
-        self.__layout_state.setContentsMargins(0, 0, 0, 20)
+        self.__layout_state.setContentsMargins(0, 0, 0, 10)
         self.__lab_state_fram.setLayout(self.__layout_state)
 
         # top layout
@@ -177,7 +185,10 @@ class MainWindow(QWidget):
         # set object name
         self.__widget_frame.setObjectName('fram')
         self.__lab_title.setObjectName('lab_title')
+        self.__ln_open_tool.setObjectName('ln_open_tool')
         self.__lab_mode_fram.setObjectName('mode_fram')
+        self.__ln_file_name.setObjectName('ln_pattern')
+        self.__ln_file_path.setObjectName('ln_path')
         self.__lab_state.setObjectName('state')
         self.__tabView.setObjectName('tabView')
         self.__browser_result.setObjectName('browser_result')
@@ -188,21 +199,33 @@ class MainWindow(QWidget):
                 'border-image: url(Images/bg);'
             '}'
             '#lab_title{'
-                'color: rgb(0, 0, 180);'
+                'color: white;'
                 'font-size: 18pt;'
             '}'
+            '#open_tool{'
+                'color: black;'
+            '}'
             '#mode_fram{'
-                'border-top: 1px solid rgba(20, 20, 20, 100);'
-                'border-bottom: 1px solid rgba(20, 20, 20, 100);'
+                # 'border-top: 1px solid rgba(20, 20, 20, 100);'
+                # 'border-bottom: 1px solid rgba(20, 20, 20, 100);'
+                'background: rgba(0, 0, 0, 40);'
+            '}'
+            '#ln_open_tool, #ln_path{'
+                'border-top-left-radius:    2px;'
+                'border-bottom-left-radius: 2px;'
+            '}'
+            '#ln_pattern{'
+                'border-radius: 2px;'
             '}'
             '#state{'
-                'border: 1px solid gray;'
+                'background: rgba(0, 0, 0, 40);'
                 'border-radius: 2px;'
-                'color: rgb(0, 0, 100);'
+                'padding: 1px;'
+                'color: rgb(240, 240, 240);'
             '}'
             'QTabBar::tab {'
                 'border: 0;'
-                'width: 77px;'
+                'width:  90px;'
                 'height: 20px;'
                 'margin: 0 2px 0 0;'        # top right bottom left
                 # 'border-top-left-radius: 5px;'
@@ -217,17 +240,35 @@ class MainWindow(QWidget):
             '}'
             'QTabWidget:pane {'
                 'border: 1px solid rgba(255, 255, 255, 200);'
-                'background: rgba(25, 0, 0, 40);'
+                'background: rgba(0, 0, 0, 80);'
             '}'
             '#browser_result, #browser_error{'
                 'background: rgba(0, 0, 0, 0);'
                 'border: 0;'
             '}'
             'QLineEdit{'
-                'background: rgba(0, 0, 0, 0);'
-                'border: 1 solid gray;'
-                'border-radius: 2px;'
+                'background: rgba(0, 0, 0, 40);'
+                'border: 1px solid rgba(220, 220, 220, 200);'
+                'color: white;'
                 'height: 20px;'
+            '}'
+            'QPushButton{'
+                'background: rgba(0, 0, 0, 100);'
+                'border-radius: 5px;'
+                'height: 20px;'
+                'color: white;'
+            '}'
+            'QPushButton::hover{'
+                'background: rgba(0, 0, 0, 150);'
+            '}'
+            'QToolButton{'
+                'background: rgba(0, 0, 0, 100);'
+                'color: white;'
+                'border-top-right-radius:    2px;'
+                'border-bottom-right-radius: 2px;'
+            '}'
+            'QToolButton::hover{'
+                'background: rgba(0, 0, 0, 150);'
             '}'
             )
 
@@ -399,7 +440,7 @@ class MainWindow(QWidget):
     # 选择打开文件工具
     def choose_open_tool(self):
         path = QFileDialog.getOpenFileName()
-        if path != '':
+        if path[0] != '':
             self.__ln_open_tool.setText(path[0])
 
     # 显示搜索结果
@@ -418,7 +459,7 @@ class MainWindow(QWidget):
                 item = self.__queue_result.get()                                        # 出队一项
                 self.__browser_result.addItem(QListWidgetItem(item))                           # 加载到界面
             #self.__browser.setCurrentRow(self.__browser.count()-1)                  # 设置列表中最后一项为当前项，使列表不停滚动
-            #sleep(0.05)                                                              # 给界面事件循环腾出时间，避免界面冻结
+            sleep(0.05)                                                              # 给界面事件循环腾出时间，避免界面冻结
         #self.__pbn_search.setEnabled(True)
 
     # 显示出错结果
@@ -441,10 +482,10 @@ class MainWindow(QWidget):
 
         # 检查参数
         if file_path == '':
-            QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入路径', QMessageBox.Ok, self).exec_()
+            QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入搜索路径！', QMessageBox.Ok, self).exec_()
             return
         if file_name == '':
-            QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入匹配特征', QMessageBox.Ok, self).exec_()
+            QMessageBox(QMessageBox.Warning, '缺少参数！', '请输入匹配条件！', QMessageBox.Ok, self).exec_()
             return
 
         # 判断搜索模式
