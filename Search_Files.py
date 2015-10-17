@@ -4,7 +4,8 @@ import platform
 from os import (walk, sep, system)
 from os.path import (join, splitext, exists)
 from PyQt5.QtWidgets import (QApplication, QMessageBox, QFileDialog, QWidget,
-                             QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser, QButtonGroup, QFrame, QListWidget, QListWidgetItem, QListWidget, QListWidgetItem,
+                             QLabel, QLineEdit, QRadioButton, QPushButton, QTextBrowser,
+			     QButtonGroup, QFrame, QListWidget, QListWidgetItem, QListWidget, QListWidgetItem, QTabWidget,
                              QHBoxLayout, QVBoxLayout, QGridLayout)
 
 from PyQt5.QtCore import (Qt, QTimer)
@@ -29,7 +30,7 @@ class MainWindow(QWidget):
 
         # window title
         self.__lab_title_fram = QLabel()
-        self.__lab_title = QLabel('<font color="green" size="6">搜索辅助工具</font>')
+        self.__lab_title = QLabel('搜索辅助工具')
         self.__lab_title.setAlignment(Qt.AlignCenter)
 
         self.__lab_open_tool = QLabel('打开文件方式')
@@ -75,7 +76,11 @@ class MainWindow(QWidget):
         self.__lab_state_fram.setFixedHeight(40)
 
         # search result
-        self.__browser = QListWidget()
+        self.__tabView = QTabWidget()
+        self.__browser_result = QListWidget()
+        self.__browser_error = QTextBrowser()
+        self.__tabView.addTab(self.__browser_result, '匹配结果')
+        self.__tabView.addTab(self.__browser_error, '错误结果')
 
         self.__btn_group_type = QButtonGroup()
         self.__btn_group_type.addButton(self.__rbn_search_file)
@@ -92,12 +97,6 @@ class MainWindow(QWidget):
         '''
         self.__line_1 = QFrame()
         self.__line_1.setFrameStyle(QFrame.HLine | QFrame.Sunken)
-        self.__line_2 = QFrame()
-        self.__line_2.setFrameStyle(QFrame.HLine | QFrame.Sunken)
-        self.__line_3 = QFrame()
-        self.__line_3.setFrameStyle(QFrame.HLine | QFrame.Sunken)
-        self.__line_4 = QFrame()
-        self.__line_4.setFrameStyle(QFrame.HLine | QFrame.Sunken)
         '''
 
         # 布局
@@ -166,50 +165,70 @@ class MainWindow(QWidget):
         self.__layout_top.addWidget(self.__lab_pattern_fram)
         self.__layout_top.addWidget(self.__lab_path_fram)
         self.__layout_top.addWidget(self.__lab_state_fram)
-        self.__layout_top.addWidget(self.__browser)
+        self.__layout_top.addWidget(self.__tabView)
         self.__layout_top.setSpacing(10)
         self.__widget_frame.setLayout(self.__layout_top)
 
         self.__layout_fram = QGridLayout()
         self.__layout_fram.addWidget(self.__widget_frame, 0, 0, 1, 1)
+        self.__layout_fram.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.__layout_fram)
 
         # set object name
-        self.setObjectName('mainUI')
         self.__widget_frame.setObjectName('fram')
-        self.__lab_title_fram.setObjectName('title_fram')
+        self.__lab_title.setObjectName('lab_title')
         self.__lab_mode_fram.setObjectName('mode_fram')
-        self.__browser.setObjectName('browser')
         self.__lab_state.setObjectName('state')
-        self.__ln_file_path.setObjectName('ln_path')
+        self.__tabView.setObjectName('tabView')
+        self.__browser_result.setObjectName('browser_result')
+        self.__browser_error.setObjectName('browser_error')
 
         self.setStyleSheet(
             '#fram{'
-                # 'background: rgba(0, 0, 0, 100);'
-                # 'border: 1px solid white;'
                 'border-image: url(Images/bg);'
+            '}'
+            '#lab_title{'
+                'color: rgb(0, 0, 180);'
+                'font-size: 18pt;'
             '}'
             '#mode_fram{'
                 'border-top: 1px solid rgba(20, 20, 20, 100);'
                 'border-bottom: 1px solid rgba(20, 20, 20, 100);'
-            '}'
-            '#browser{'
-                'background: rgba(0, 0, 0, 0);'
             '}'
             '#state{'
                 'border: 1px solid gray;'
                 'border-radius: 2px;'
                 'color: rgb(0, 0, 100);'
             '}'
-            '#ln_path{'
-                # 'background: rgba(255, 255, 255, 255);'
+            'QTabBar::tab {'
+                'border: 0;'
+                'width: 77px;'
+                'height: 20px;'
+                'margin: 0 2px 0 0;'        # top right bottom left
+                # 'border-top-left-radius: 5px;'
+                # 'border-top-right-radius: 5px;'
+                'color: rgb(200, 255, 255;);'
+            '}'
+            'QTabBar::tab:selected{'
+                'background: rgba(25, 0, 0, 40);'
+                'border-left: 1px solid rgba(255, 255, 255, 200);'
+                'border-top: 1px solid rgba(255, 255, 255, 200);'
+                'border-right: 1px solid rgba(255, 255, 255, 200);'
+            '}'
+            'QTabWidget:pane {'
+                'border: 1px solid rgba(255, 255, 255, 200);'
+                'background: rgba(25, 0, 0, 40);'
+            '}'
+            '#browser_result, #browser_error{'
+                'background: rgba(0, 0, 0, 0);'
+                'border: 0;'
             '}'
             'QLineEdit{'
                 'background: rgba(0, 0, 0, 0);'
                 'border: 1 solid gray;'
                 'border-radius: 2px;'
                 'height: 20px;'
-             '}'
+            '}'
             )
 
         self.__ln_file_name.setFocus()
@@ -220,10 +239,10 @@ class MainWindow(QWidget):
         self.__pbn_search.clicked.connect(self.pbn_search_clicked)
         self.__pbn_stop.clicked.connect(self.pbn_stop)
         self.__pbn_open_tool.clicked.connect(self.choose_open_tool)
-        self.__browser.doubleClicked.connect(self.listitem_clicked)
+        self.__browser_result.doubleClicked.connect(self.listitem_clicked)
 
         # 线程间共享数据队列
-        queue_size = 100000
+        queue_size = 10000
         self.__queue_result = Queue(queue_size)
         self.__queue_error = Queue(queue_size)
 
@@ -282,6 +301,7 @@ class MainWindow(QWidget):
                         count += 1
                         self.__lab_state.setText('正在搜索......已搜到 %d 个文件' % count)
                         self.__queue_result.put(join(root, each_file))
+                        self.__tabView.setTabText(0, '匹配结果(%d)' % count)
         # precise mode
         elif mode == self.__search_mode['precise']:
             for root, dirs, files in walk(filepath):
@@ -290,6 +310,7 @@ class MainWindow(QWidget):
                         count += 1
                         self.__lab_state.setText('正在搜索......已搜到 %d 个文件' % count)
                         self.__queue_result.put(join(root, each_file))
+                        self.__tabView.setTabText(0, '匹配结果(%d)' % count)
         # regular expression mode
         elif mode == self.__search_mode['reg']:
             if I:
@@ -303,6 +324,7 @@ class MainWindow(QWidget):
                         count += 1
                         self.__lab_state.setText('正在搜索......已搜到 %d 个文件' % count)
                         self.__queue_result.put(join(root, each_file))
+                        self.__tabView.setTabText(0, '匹配结果(%d)' % count)
         self.__lab_state.setText('搜索完毕！ 共搜到 %d 个文件' % count)     # finished
         self.__searching = False                # set serching flag
 
@@ -318,7 +340,7 @@ class MainWindow(QWidget):
         error_number = 0
         current_file = ''
         processing_file = ''
-        count = 0
+        match_files_count = 0
         if mode == self.__search_mode['reg']:
             if I:
                 pattern = re.compile(r'%s' % content)
@@ -328,41 +350,43 @@ class MainWindow(QWidget):
                 for each_file in [file for file in files if file.endswith('.h') or file.endswith('.cpp') or file.endswith('.cs')]:
                     current_file = join(root, each_file)
                     pass_file_count += 1
-                    self.__lab_state.setText('正在处理文件：%s' % current_file)
+                    self.__lab_state.setText('正在搜索......%s' % current_file)
                     try:
                         for line_number, line in enumerate(open(current_file)):
                             if re.search(pattern, line):
                                 if processing_file != current_file:
                                     self.__queue_result.put('\n%s' % current_file)
                                     processing_file = current_file
-                                    count += 1
+                                    match_files_count += 1
                                 self.__queue_result.put('line %s: %s' % (line_number, line.strip()))
                     except Exception as error:
                         self.__queue_error.put("%s\n(%s)\n" % (error, current_file))
                         pass_file_count -= 1
                         error_number += 1
                         continue
+                    self.__tabView.setTabText(0, '匹配结果(%d)' % match_files_count)
         else:
             for root, dirs, files in walk(path):
                 for each_file in [file for file in files if file.endswith('.h') or file.endswith('.cpp') or file.endswith('.cs') or file.endswith('.txt') or file.endswith('.py')]:
                     current_file = join(root, each_file)
                     pass_file_count += 1
-                    self.__lab_state.setText('正在处理文件：%s' % current_file)
+                    self.__lab_state.setText('正在搜索......%s' % current_file)
                     try:
                         for line_number, line in enumerate(open(current_file)):
                             if content in line:                                         # 匹配成功
                                 if processing_file != current_file:                     # 如果是新文件
                                     self.__queue_result.put('\n%s' % current_file)      # 文件名入队
                                     processing_file = current_file                      # 更新文件标记
-                                    count += 1
+                                    match_files_count += 1
                                 self.__queue_result.put('line %s: %s' % (line_number, line.strip()))    # 匹配行入队
                     except Exception as error:
                         self.__queue_error.put("%s\n(%s)\n" % (error, current_file))
                         pass_file_count -= 1
                         error_number += 1
                         continue
+                    self.__tabView.setTabText(0, '匹配结果(%d)' % match_files_count)
         # self.__queue_result.put()
-        self.__lab_state.setText('搜索完毕！处理 %s 个文件，失败 %s 文件。成功匹配 %d 个文件' % (pass_file_count, error_number, count))
+        self.__lab_state.setText('搜索完毕！成功匹配 %d 个文件，处理 %s 个文件，失败 %s 文件。' % (match_files_count, pass_file_count, error_number))
         self.__searching = False
 
     # 单击选择路径按钮
@@ -384,25 +408,29 @@ class MainWindow(QWidget):
         line_block = []         # 定义临时列表，成批加载，避免刷新频率过高造成界面闪烁
         block_size = 10         # 一次性加载的个数
         while self.__searching or self.__queue_result.qsize():
-            print(self.__queue_result.qsize())
             # if self.__searching or self.__queue_result.qsize() >= block_size:     // 永远记住这个 bug （生产者-消费者 问题）
             if self.__queue_result.qsize() >= block_size:                           # 如果队列中不小于 block_size 个项
                 for i in range(block_size):                                             # 取出 block_size 个项
                     line_block.append(self.__queue_result.get())                        # 出队操作
-                self.__browser.addItems(line_block)                                     # 一次性添加 block_size 个条目
+                self.__browser_result.addItems(line_block)                                     # 一次性添加 block_size 个条目
                 line_block.clear()                                                      # 清空临时列表
-            else:                                                                   # 如果队列中小于 block_size 各项
+            elif self.__queue_result.qsize() >= 0:                                                                   # 如果队列中小于 block_size 各项
                 item = self.__queue_result.get()                                        # 出队一项
-                self.__browser.addItem(QListWidgetItem(item))                           # 加载到界面
+                self.__browser_result.addItem(QListWidgetItem(item))                           # 加载到界面
             #self.__browser.setCurrentRow(self.__browser.count()-1)                  # 设置列表中最后一项为当前项，使列表不停滚动
-            sleep(0.05)                                                              # 给界面事件循环腾出时间，避免界面冻结
+            #sleep(0.05)                                                              # 给界面事件循环腾出时间，避免界面冻结
         #self.__pbn_search.setEnabled(True)
 
     # 显示出错结果
     def show_error_result(self):
         """打印略过的文件和出错原因，多为 I/O Error"""
+        count = 0
         while self.__queue_error.qsize() or self.__searching:
-            print(self.__queue_error.get())
+            if self.__queue_error.qsize() <= 0:
+               continue
+            self.__browser_error.append(self.__queue_error.get())
+            count += 1
+            self.__tabView.setTabText(1, '错误结果(%d)' % count)
 
     # 单击检索按钮
     def pbn_search_clicked(self):
@@ -433,7 +461,10 @@ class MainWindow(QWidget):
         if self.__rbn_reg_Ino.isChecked():
             I = False
 
-        self.__browser.clear()
+        self.__browser_result.clear()
+        self.__browser_error.clear()
+        self.__tabView.setTabText(0, '匹配结果(0)')
+        self.__tabView.setTabText(1, '错误结果(0)')
         self.__searching = True
 
         # 开启子线程，后台深度遍历
@@ -475,10 +506,10 @@ class MainWindow(QWidget):
     # 双击搜索结果
     def listitem_clicked(self):
         """Double click to open the file from search result"""
-        file_path = self.__browser.currentItem().text().strip()
+        file_path = self.__browser_result.currentItem().text().strip()
         read_tool = self.__ln_open_tool.text()
         if not exists(file_path):
-            QMessageBox.warning(self, '错误！', '%s 不存在或打不开！' % file_path, QMessageBox.Ok)
+            QMessageBox.warning(self, '错误！', '请双击文件名\n%s 不是文件或打不开！' % file_path, QMessageBox.Ok)
             return
         if splitext(file_path)[1] in ['.jpg', '.png', '.jpeg', '.gif']:
             file_path = r'%s'.replace(' ', r'\ ') % file_path
