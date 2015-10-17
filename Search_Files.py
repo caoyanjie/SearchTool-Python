@@ -290,6 +290,9 @@ class MainWindow(QWidget):
         # 标记搜索状态
         self.__searching = False
 
+        # 强制结束子线程
+        self.__thread_killer = False
+
     # 重写鼠标按下事件
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -338,6 +341,10 @@ class MainWindow(QWidget):
         if mode == self.__search_mode['fuzzy']:
             for root, dirs, files in walk(filepath):
                 for each_file in files:
+                    # kill subThread
+                    if self.__thread_killer == True:
+                        return
+                        
                     if filename in each_file:
                         count += 1
                         self.__lab_state.setText('正在搜索......已搜到 %d 个文件' % count)
@@ -347,6 +354,10 @@ class MainWindow(QWidget):
         elif mode == self.__search_mode['precise']:
             for root, dirs, files in walk(filepath):
                 for each_file in files:
+                    # kill subThread
+                    if self.__thread_killer == True:
+                        return
+                        
                     if filename == splitext(each_file)[0] or filename == each_file:
                         count += 1
                         self.__lab_state.setText('正在搜索......已搜到 %d 个文件' % count)
@@ -361,6 +372,10 @@ class MainWindow(QWidget):
 
             for root, dirs, files in walk(filepath):
                 for each_file in files:
+                    # kill subThread
+                    if self.__thread_killer == True:
+                        return
+                        
                     if re.search(pattern, each_file):
                         count += 1
                         self.__lab_state.setText('正在搜索......已搜到 %d 个文件' % count)
@@ -394,6 +409,10 @@ class MainWindow(QWidget):
                     self.__lab_state.setText('正在搜索......%s' % current_file)
                     try:
                         for line_number, line in enumerate(open(current_file)):
+                            # kill subThread
+                            if self.__thread_killer == True:
+                                return
+                            
                             if re.search(pattern, line):
                                 if processing_file != current_file:
                                     self.__queue_result.put('\n%s' % current_file)
@@ -414,6 +433,10 @@ class MainWindow(QWidget):
                     self.__lab_state.setText('正在搜索......%s' % current_file)
                     try:
                         for line_number, line in enumerate(open(current_file)):
+                            # kill subThread
+                            if self.__thread_killer == True:
+                                return
+                            
                             if content in line:                                         # 匹配成功
                                 if processing_file != current_file:                     # 如果是新文件
                                     self.__queue_result.put('\n%s' % current_file)      # 文件名入队
@@ -449,6 +472,10 @@ class MainWindow(QWidget):
         line_block = []         # 定义临时列表，成批加载，避免刷新频率过高造成界面闪烁
         block_size = 10         # 一次性加载的个数
         while self.__searching or self.__queue_result.qsize():
+            # kill subThread
+            if self.__thread_killer == True:
+                return
+            
             # if self.__searching or self.__queue_result.qsize() >= block_size:     // 永远记住这个 bug （生产者-消费者 问题）
             if self.__queue_result.qsize() >= block_size:                           # 如果队列中不小于 block_size 个项
                 for i in range(block_size):                                             # 取出 block_size 个项
@@ -467,6 +494,10 @@ class MainWindow(QWidget):
         """打印略过的文件和出错原因，多为 I/O Error"""
         count = 0
         while self.__queue_error.qsize() or self.__searching:
+            # kill subThread
+            if self.__thread_killer == True:
+                return
+            
             if self.__queue_error.qsize() <= 0:
                continue
             self.__browser_error.append(self.__queue_error.get())
@@ -509,6 +540,7 @@ class MainWindow(QWidget):
         self.__searching = True
 
         # 开启子线程，后台深度遍历
+        self.__thread_killer = False
         if self.__rbn_search_file.isChecked():
             self.__lab_state.setText('正在搜索......已搜索到 0 个文件')
             self.__sub_thread_search = Thread(target=self.search_from_filename, args=(file_path, file_name, mode, I))
@@ -533,14 +565,11 @@ class MainWindow(QWidget):
     def pbn_stop(self):
         if not self.__searching:
             return
-        if self.__sub_thread_search.isAlive():
-            self.__sub_thread_search._stop()
-        self.__queue_result.Clear()
-        self.__queue_error.Clear()
-        if self.__sub_thread_show_result.isAlive:
-            self.__sub_thread_show_result._stop()
-        if self.__sub_thread_show_error.isAlive:
-            self.__sub_thread_show_error._stop()
+        self.__thread_killer = True
+        while self.__queue_result.qsize():
+            self.__queue_result.get()
+        while self.__queue_error.qsize():
+            self.__queue_error.get()
         self.__lab_state.setText('搜索已停止！')
         self.__searching = False
 
