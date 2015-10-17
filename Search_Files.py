@@ -187,7 +187,7 @@ class MainWindow(QWidget):
             '#fram{'
                 # 'background: rgba(0, 0, 0, 100);'
                 # 'border: 1px solid white;'
-                # 'border-image: url(Images/bg.png);'
+                'border-image: url(Images/bg);'
             '}'
             '#mode_fram{'
                 'border-top: 1px solid rgba(20, 20, 20, 100);'
